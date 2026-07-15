@@ -15,3 +15,4 @@ export { createPrg } from "./tools/createPrg.js";
 export { exportJson } from "./tools/exportJson.js";
 export { inspectPrg } from "./tools/inspectPrg.js";
 export { updateTextNode } from "./tools/updateTextNode.js";
+export { describeCapabilities, isAvailable } from "./aiAdapter/index.js";
