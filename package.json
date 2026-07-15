@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "graphif-mcp"
+    "graphif-mcp",
+    "graphif-live-plugin"
   ],
   "scripts": {
-    "build": "npm run build --workspace graphif-mcp",
+    "build": "npm run build --workspaces",
     "start": "npm run build && node graphif-mcp/dist/server.js",
     "test": "npm test --workspace graphif-mcp"
   }

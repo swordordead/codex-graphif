@@ -1,0 +1,20 @@
+{
+  "name": "codex-graphif-live",
+  "displayName": "Codex Graphif Live",
+  "version": "0.1.0",
+  "description": "Live bridge extension that lets Codex control the active Graphif canvas.",
+  "author": "swordordead",
+  "icon": "icon.svg",
+  "type": "module",
+  "devDependencies": {
+    "extprg": "^1.1.0",
+    "extprg-types": "^1.3.2",
+    "typescript": "^6.0.3"
+  },
+  "scripts": {
+    "build": "extprg build",
+    "dev": "extprg dev",
+    "package": "extprg package",
+    "install:ext": "extprg install"
+  }
+}
