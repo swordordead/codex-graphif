@@ -10,10 +10,21 @@ import { addTextNode } from "./tools/addTextNode.js";
 import { createPrg } from "./tools/createPrg.js";
 import { exportJson } from "./tools/exportJson.js";
 import { inspectPrg } from "./tools/inspectPrg.js";
+import {
+  liveAddEdge,
+  liveAddTextNode,
+  liveCreateBeidou,
+  liveListEdges,
+  liveListNodes,
+  liveMoveNode,
+  liveRenameNode,
+} from "./tools/liveCommands.js";
+import { liveStatus } from "./tools/liveStatus.js";
 import { updateTextNode } from "./tools/updateTextNode.js";
 import { serverName } from "./index.js";
+import { LiveBridge } from "./liveBridge/bridge.js";
 
-export function createGraphifMcpServer(): McpServer {
+export function createGraphifMcpServer(bridge = new LiveBridge({ port: 17321 })): McpServer {
   const server = new McpServer({
     name: serverName,
     version: "0.1.0",
@@ -122,11 +133,113 @@ export function createGraphifMcpServer(): McpServer {
       toSafeToolResult(() => addLineEdge(path, { sourceId, targetId, text }, outputPath)),
   );
 
+  server.registerTool(
+    "live_status",
+    {
+      title: "Graphif Live Status",
+      description: "Check whether the Graphif live plugin is connected.",
+      inputSchema: {},
+    },
+    async () => toToolResult(liveStatus(bridge)),
+  );
+
+  server.registerTool(
+    "live_list_nodes",
+    {
+      title: "List Live Graphif Nodes",
+      description: "List text nodes from the active Graphif canvas.",
+      inputSchema: {},
+    },
+    async () => toSafeToolResult(() => liveListNodes(bridge)),
+  );
+
+  server.registerTool(
+    "live_list_edges",
+    {
+      title: "List Live Graphif Edges",
+      description: "List line edges from the active Graphif canvas.",
+      inputSchema: {},
+    },
+    async () => toSafeToolResult(() => liveListEdges(bridge)),
+  );
+
+  server.registerTool(
+    "live_add_text_node",
+    {
+      title: "Add Live Graphif Text Node",
+      description: "Add a text node to the active Graphif canvas.",
+      inputSchema: {
+        text: z.string(),
+        x: z.number(),
+        y: z.number(),
+        select: z.boolean().optional(),
+      },
+    },
+    async (input) => toSafeToolResult(() => liveAddTextNode(bridge, input)),
+  );
+
+  server.registerTool(
+    "live_move_node",
+    {
+      title: "Move Live Graphif Node",
+      description: "Move a text node in the active Graphif canvas.",
+      inputSchema: {
+        nodeId: z.string(),
+        x: z.number(),
+        y: z.number(),
+      },
+    },
+    async (input) => toSafeToolResult(() => liveMoveNode(bridge, input)),
+  );
+
+  server.registerTool(
+    "live_rename_node",
+    {
+      title: "Rename Live Graphif Node",
+      description: "Rename a text node in the active Graphif canvas.",
+      inputSchema: {
+        nodeId: z.string(),
+        text: z.string(),
+      },
+    },
+    async (input) => toSafeToolResult(() => liveRenameNode(bridge, input)),
+  );
+
+  server.registerTool(
+    "live_add_edge",
+    {
+      title: "Add Live Graphif Edge",
+      description: "Connect two text nodes in the active Graphif canvas.",
+      inputSchema: {
+        sourceId: z.string(),
+        targetId: z.string(),
+        text: z.string().optional(),
+      },
+    },
+    async (input) => toSafeToolResult(() => liveAddEdge(bridge, input)),
+  );
+
+  server.registerTool(
+    "live_create_beidou",
+    {
+      title: "Create Beidou Graph Live",
+      description: "Create a Beidou constellation graph in the active Graphif canvas.",
+      inputSchema: {
+        originX: z.number().optional(),
+        originY: z.number().optional(),
+        scale: z.number().optional(),
+      },
+    },
+    async (input) => toSafeToolResult(() => liveCreateBeidou(bridge, input)),
+  );
+
   return server;
 }
 
 export async function main(): Promise<void> {
-  const server = createGraphifMcpServer();
+  const bridge = new LiveBridge({ port: 17321 });
+  await bridge.start();
+  const server = createGraphifMcpServer(bridge);
   await server.connect(new StdioServerTransport());
 }
 
