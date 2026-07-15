@@ -15,6 +15,6 @@
     "build": "extprg build",
     "dev": "extprg dev",
     "package": "extprg package",
-    "install:ext": "extprg install"
+    "install:ext": "node scripts/install-extension.mjs"
   }
 }

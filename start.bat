@@ -35,5 +35,6 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo Starting Graphif MCP over stdio. This service does not use a browser or HTTP port.
+echo Starting Graphif MCP over stdio.
+echo Live Graphif bridge listens on ws://127.0.0.1:17321 when the MCP process is running.
 node graphif-mcp\dist\server.js

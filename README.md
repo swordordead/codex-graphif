@@ -1,60 +1,68 @@
-# Graphif MCP
+# Codex Graphif
 
-Graphif MCP 是一个本地 MCP 服务，用来让 Codex 读取、生成和修改 Graphif `.prg` 文件。第一版只做文件级操作：Codex 通过 MCP 改当前项目里的 `.prg`，Graphif 负责打开这些文件查看和继续编辑。
+Codex Graphif lets Codex work with Graphif in two ways:
 
-## 技术栈
+1. File mode: inspect, create, and modify Graphif `.prg` files.
+2. Live mode: control the currently open Graphif canvas through a Graphif extension and a localhost bridge.
+
+Live mode is the realtime path. MCP alone cannot control an open Graphif canvas; the `graphif-live-plugin` extension must be installed inside Graphif so it can call Graphif's canvas APIs.
+
+## Tech Stack
 
 - Node.js 24+
 - TypeScript
 - npm workspaces
 - MCP SDK
+- Graphif `extprg`
+- Graphif `extprg-types`
 - `@zip.js/zip.js`
 - `@msgpack/msgpack`
+- `ws`
 - Vitest
 
-## 启动方式
+## Setup
 
-安装依赖：
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-运行测试：
+Run tests:
 
 ```bash
 npm test
 ```
 
-构建：
+Build all packages:
 
 ```bash
 npm run build
 ```
 
-启动 MCP 服务：
+Start the MCP server and live bridge:
 
 ```bash
 npm start
 ```
 
-Windows 可双击运行：
+Windows can also run:
 
 ```text
 start.bat
 ```
 
-这个项目是 stdio MCP 服务，不占用 HTTP 端口，也不会自动打开浏览器。
+The MCP server uses stdio for Codex and opens a localhost WebSocket bridge at `127.0.0.1:17321` for the Graphif plugin.
 
-## MCP 配置示例
+## MCP Configuration
 
-构建后，MCP server 入口是：
+After building, the MCP server entrypoint is:
 
 ```text
 graphif-mcp/dist/server.js
 ```
 
-客户端配置示例：
+Example client config:
 
 ```json
 {
@@ -69,16 +77,43 @@ graphif-mcp/dist/server.js
 }
 ```
 
-## 工具
+## Install the Graphif Live Plugin
 
-- `inspect_prg`：读取 `.prg` 的节点、连线和版本信息
-- `export_json`：导出 JSON 安全结构
-- `create_prg`：根据节点和连线创建 `.prg`
-- `update_text_node`：修改文字节点，默认写入 `.generated.prg`
-- `add_text_node`：追加文字节点
-- `add_line_edge`：追加连线
+Build the plugin:
 
-## 目录结构
+```bash
+npm run build --workspace graphif-live-plugin
+```
+
+Install it into Graphif:
+
+```bash
+npm run install:ext --workspace graphif-live-plugin
+```
+
+Then start the MCP server and open Graphif. The plugin connects to `ws://127.0.0.1:17321` and shows a toast when connected.
+
+## File Tools
+
+- `inspect_prg`: read `.prg` nodes, edges, and version metadata
+- `export_json`: export a JSON-safe graph representation
+- `create_prg`: create a `.prg` from nodes and edges
+- `update_text_node`: update a text node and write `.generated.prg` by default
+- `add_text_node`: add a text node to a `.prg`
+- `add_line_edge`: add a line edge to a `.prg`
+
+## Live Tools
+
+- `live_status`: check whether Graphif is connected
+- `live_list_nodes`: read text nodes from the active Graphif canvas
+- `live_list_edges`: read line edges from the active Graphif canvas
+- `live_add_text_node`: add a text node live
+- `live_move_node`: move a text node live
+- `live_rename_node`: rename a text node live
+- `live_add_edge`: connect two text nodes live
+- `live_create_beidou`: draw a Beidou constellation graph live
+
+## Directory Structure
 
 ```text
 .
@@ -86,9 +121,14 @@ graphif-mcp/dist/server.js
 │   └── superpowers/
 │       ├── plans/
 │       └── specs/
+├── graphif-live-plugin/
+│   ├── src/
+│   ├── icon.svg
+│   └── package.json
 ├── graphif-mcp/
 │   ├── src/
 │   │   ├── aiAdapter/
+│   │   ├── liveBridge/
 │   │   ├── prg/
 │   │   ├── tools/
 │   │   ├── errors.ts
@@ -99,11 +139,12 @@ graphif-mcp/dist/server.js
 └── start.bat
 ```
 
-## 部署说明
+## Deployment Notes
 
-1. 在本项目根目录执行 `npm install`
-2. 执行 `npm run build`
-3. 把 `node graphif-mcp/dist/server.js` 配到支持 MCP 的客户端
-4. 在客户端中调用 Graphif MCP 工具读写 `.prg`
+1. Run `npm install`.
+2. Run `npm run build`.
+3. Install the Graphif plugin with `npm run install:ext --workspace graphif-live-plugin`.
+4. Configure Codex to run `node graphif-mcp/dist/server.js`.
+5. Start Codex/MCP, open Graphif, then call `live_status`.
 
-当前版本不实时控制已经打开的 Graphif 软件窗口，也不调用 Graphif UI 中的 AI 配置入口。`aiAdapter` 只作为后续扩展边界保留。
+The Graphif AI configuration UI is not used. Live control is done through the Graphif extension APIs.
