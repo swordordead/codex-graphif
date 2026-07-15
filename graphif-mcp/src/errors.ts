@@ -3,6 +3,9 @@ export type GraphifMcpErrorCode =
   | "INVALID_ARCHIVE"
   | "UNSUPPORTED_STAGE"
   | "NODE_NOT_FOUND"
+  | "GRAPHIF_NOT_CONNECTED"
+  | "LIVE_COMMAND_FAILED"
+  | "LIVE_COMMAND_TIMEOUT"
   | "INVALID_INPUT";
 
 export class GraphifMcpError extends Error {
