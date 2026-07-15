@@ -1,4 +1,5 @@
 import { extname } from "node:path";
+import { GraphifMcpError } from "../errors.js";
 import { readPrgArchive, writePrgArchive } from "./archive.js";
 import { buildLineEdge, buildTextNode } from "./builders.js";
 import { decodeMsgpack, encodeMsgpack } from "./msgpack.js";
@@ -39,12 +40,12 @@ export async function readPrgDocument(path: string): Promise<PrgDocument> {
   const archive = await readPrgArchive(path);
   const stageBytes = archive.files.get(STAGE_ENTRY);
   if (!stageBytes) {
-    throw new Error(`Missing ${STAGE_ENTRY} in ${path}`);
+    throw new GraphifMcpError("UNSUPPORTED_STAGE", `Missing ${STAGE_ENTRY} in ${path}`);
   }
 
   const rawEntries = decodeMsgpack<unknown>(stageBytes);
   if (!Array.isArray(rawEntries) || !rawEntries.every(isSerializedEntry)) {
-    throw new Error(`${STAGE_ENTRY} must contain serialized Graphif entries`);
+    throw new GraphifMcpError("UNSUPPORTED_STAGE", `${STAGE_ENTRY} must contain serialized Graphif entries`);
   }
 
   const metadataBytes = archive.files.get(METADATA_ENTRY);
@@ -71,7 +72,10 @@ export async function createPrgFile(path: string, nodes: CreateNodeInput[], edge
     const sourceIndex = nodeIndexById.get(edge.sourceId);
     const targetIndex = nodeIndexById.get(edge.targetId);
     if (sourceIndex === undefined || targetIndex === undefined) {
-      throw new Error(`Cannot create edge ${edge.sourceId} -> ${edge.targetId}: node id not found`);
+      throw new GraphifMcpError(
+        "NODE_NOT_FOUND",
+        `Cannot create edge ${edge.sourceId} -> ${edge.targetId}: node id not found`,
+      );
     }
     rawEntries.push(
       buildLineEdge({
@@ -104,7 +108,7 @@ export async function updateTextNodeFile(
   const stage = parseStage(document.rawEntries, document.metadata);
   const node = stage.textNodes.find((candidate) => candidate.id === nodeId || candidate.uuid === nodeId);
   if (!node) {
-    throw new Error(`Text node not found: ${nodeId}`);
+    throw new GraphifMcpError("NODE_NOT_FOUND", `Text node not found: ${nodeId}`);
   }
   document.rawEntries[node.index].text = text;
   await writeStageDocument(outputPath, document);
@@ -138,7 +142,10 @@ export async function addLineEdgeFile(
   const source = stage.textNodes.find((node) => node.id === input.sourceId || node.uuid === input.sourceId);
   const target = stage.textNodes.find((node) => node.id === input.targetId || node.uuid === input.targetId);
   if (!source || !target) {
-    throw new Error(`Cannot add edge ${input.sourceId} -> ${input.targetId}: node id not found`);
+    throw new GraphifMcpError(
+      "NODE_NOT_FOUND",
+      `Cannot add edge ${input.sourceId} -> ${input.targetId}: node id not found`,
+    );
   }
   document.rawEntries.push(
     buildLineEdge({

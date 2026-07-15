@@ -1,5 +1,6 @@
 import { readPrgArchive } from "./archive.js";
 import { decodeMsgpack } from "./msgpack.js";
+import { GraphifMcpError } from "../errors.js";
 import type { GraphStage, GraphifMetadata, LineEdge, SerializedEntry, TextNode } from "./types.js";
 
 const STAGE_ENTRY = "stage.msgpack";
@@ -9,12 +10,12 @@ export async function readStage(path: string): Promise<GraphStage> {
   const archive = await readPrgArchive(path);
   const stageBytes = archive.files.get(STAGE_ENTRY);
   if (!stageBytes) {
-    throw new Error(`Missing ${STAGE_ENTRY} in ${path}`);
+    throw new GraphifMcpError("UNSUPPORTED_STAGE", `Missing ${STAGE_ENTRY} in ${path}`);
   }
 
   const rawEntries = decodeMsgpack<unknown>(stageBytes);
   if (!Array.isArray(rawEntries)) {
-    throw new Error(`${STAGE_ENTRY} must contain an array`);
+    throw new GraphifMcpError("UNSUPPORTED_STAGE", `${STAGE_ENTRY} must contain an array`);
   }
 
   const metadataBytes = archive.files.get(METADATA_ENTRY);

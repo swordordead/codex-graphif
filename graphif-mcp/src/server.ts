@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { normalizeError } from "./errors.js";
 import { addLineEdge } from "./tools/addLineEdge.js";
 import { addTextNode } from "./tools/addTextNode.js";
 import { createPrg } from "./tools/createPrg.js";
@@ -27,7 +28,7 @@ export function createGraphifMcpServer(): McpServer {
         path: z.string(),
       },
     },
-    async ({ path }) => toToolResult(await inspectPrg(path)),
+    async ({ path }) => toSafeToolResult(() => inspectPrg(path)),
   );
 
   server.registerTool(
@@ -39,7 +40,7 @@ export function createGraphifMcpServer(): McpServer {
         path: z.string(),
       },
     },
-    async ({ path }) => toToolResult(await exportJson(path)),
+    async ({ path }) => toSafeToolResult(() => exportJson(path)),
   );
 
   server.registerTool(
@@ -68,7 +69,7 @@ export function createGraphifMcpServer(): McpServer {
           .default([]),
       },
     },
-    async ({ path, nodes, edges }) => toToolResult(await createPrg(path, nodes, edges)),
+    async ({ path, nodes, edges }) => toSafeToolResult(() => createPrg(path, nodes, edges)),
   );
 
   server.registerTool(
@@ -83,7 +84,7 @@ export function createGraphifMcpServer(): McpServer {
         outputPath: z.string().optional(),
       },
     },
-    async ({ path, nodeId, text, outputPath }) => toToolResult(await updateTextNode(path, nodeId, text, outputPath)),
+    async ({ path, nodeId, text, outputPath }) => toSafeToolResult(() => updateTextNode(path, nodeId, text, outputPath)),
   );
 
   server.registerTool(
@@ -101,7 +102,7 @@ export function createGraphifMcpServer(): McpServer {
       },
     },
     async ({ path, id, text, x, y, outputPath }) =>
-      toToolResult(await addTextNode(path, { id, text, x, y }, outputPath)),
+      toSafeToolResult(() => addTextNode(path, { id, text, x, y }, outputPath)),
   );
 
   server.registerTool(
@@ -118,7 +119,7 @@ export function createGraphifMcpServer(): McpServer {
       },
     },
     async ({ path, sourceId, targetId, text, outputPath }) =>
-      toToolResult(await addLineEdge(path, { sourceId, targetId, text }, outputPath)),
+      toSafeToolResult(() => addLineEdge(path, { sourceId, targetId, text }, outputPath)),
   );
 
   return server;
@@ -127,6 +128,33 @@ export function createGraphifMcpServer(): McpServer {
 export async function main(): Promise<void> {
   const server = createGraphifMcpServer();
   await server.connect(new StdioServerTransport());
+}
+
+async function toSafeToolResult(read: () => Promise<unknown>) {
+  try {
+    return toToolResult(await read());
+  } catch (error) {
+    const normalized = normalizeError(error);
+    return {
+      isError: true,
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify(
+            {
+              error: {
+                code: normalized.code,
+                message: normalized.message,
+                details: normalized.details ?? null,
+              },
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    };
+  }
 }
 
 function toToolResult(value: unknown) {

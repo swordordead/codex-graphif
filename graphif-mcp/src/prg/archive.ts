@@ -1,5 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { Uint8ArrayReader, Uint8ArrayWriter, ZipReader, ZipWriter } from "@zip.js/zip.js";
+import { GraphifMcpError, isNodeError } from "../errors.js";
 
 export interface PrgArchive {
   entries: string[];
@@ -7,7 +8,16 @@ export interface PrgArchive {
 }
 
 export async function readPrgArchive(path: string): Promise<PrgArchive> {
-  const bytes = await readFile(path);
+  let bytes: Uint8Array;
+  try {
+    bytes = await readFile(path);
+  } catch (error) {
+    if (isNodeError(error) && error.code === "ENOENT") {
+      throw new GraphifMcpError("FILE_NOT_FOUND", `File not found: ${path}`, { path });
+    }
+    throw error;
+  }
+
   const reader = new ZipReader(new Uint8ArrayReader(bytes));
   try {
     const entries = await reader.getEntries();
@@ -21,6 +31,10 @@ export async function readPrgArchive(path: string): Promise<PrgArchive> {
       entries: [...files.keys()],
       files,
     };
+  } catch (error) {
+    throw new GraphifMcpError("INVALID_ARCHIVE", `Invalid .prg archive: ${path}`, {
+      cause: error instanceof Error ? error.message : String(error),
+    });
   } finally {
     await reader.close();
   }
