@@ -1,0 +1,13 @@
+{
+  "name": "graphif-mcp-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "graphif-mcp"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace graphif-mcp",
+    "test": "npm test --workspace graphif-mcp"
+  }
+}

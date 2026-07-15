@@ -1,0 +1,4 @@
+node_modules
+dist
+graphif-mcp/dist
+npm-debug.log*
