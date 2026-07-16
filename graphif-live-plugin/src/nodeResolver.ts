@@ -1,14 +1,7 @@
 export function resolveTextNode(nodeId: string): TextNode {
-  const nodes = prg.project.stageManager.getTextNodes();
-  const byUuid = nodes.find((node) => node.uuid === nodeId);
-  if (byUuid) return byUuid;
-
-  const byText = nodes.filter((node) => node.text === nodeId);
-  if (byText.length === 1) return byText[0];
-  if (byText.length > 1) {
-    throw commandError("AMBIGUOUS_NODE", `Multiple text nodes match: ${nodeId}`);
-  }
-  throw commandError("NODE_NOT_FOUND", `Text node not found: ${nodeId}`);
+  const node = prg.project.stageManager.getTextNodeByUUID(nodeId);
+  if (node) return node;
+  throw commandError("NODE_NOT_FOUND", `Text node not found by UUID: ${nodeId}`);
 }
 
 export function commandError(code: string, message: string): Error & { code: string } {

@@ -38,6 +38,30 @@ describe("live bridge", () => {
 
     expect(result).toEqual({ pong: true });
   });
+
+  it("rejects pending commands immediately when the plugin reconnects", async () => {
+    const bridge = new LiveBridge({ port: 0, commandTimeoutMs: 2000 });
+    bridges.push(bridge);
+    await bridge.start();
+
+    const firstSocket = new WebSocket(`ws://127.0.0.1:${bridge.status().port}`);
+    await onceOpen(firstSocket);
+
+    const pending = bridge.sendCommand("ping", {});
+    const rejection = pending.then(
+      () => {
+        throw new Error("Expected Graphif reconnection to reject pending command");
+      },
+      (error) => error,
+    );
+
+    const secondSocket = new WebSocket(`ws://127.0.0.1:${bridge.status().port}`);
+    await onceOpen(secondSocket);
+
+    await expect(rejection).resolves.toMatchObject({
+      code: "GRAPHIF_RECONNECTED",
+    });
+  });
 });
 
 function onceOpen(socket: WebSocket): Promise<void> {

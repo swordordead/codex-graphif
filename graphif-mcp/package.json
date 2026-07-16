@@ -1,6 +1,6 @@
 {
   "name": "graphif-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local MCP server for inspecting and editing Graphif .prg files.",
   "type": "module",
   "main": "./dist/index.js",

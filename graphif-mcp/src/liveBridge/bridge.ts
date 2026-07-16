@@ -7,6 +7,7 @@ interface PendingRequest {
   resolve: (value: unknown) => void;
   reject: (error: Error) => void;
   timeout: NodeJS.Timeout;
+  socket: WebSocket;
 }
 
 export interface LiveBridgeOptions {
@@ -81,7 +82,7 @@ export class LiveBridge {
         this.pending.delete(id);
         reject(new GraphifMcpError("LIVE_COMMAND_TIMEOUT", `Graphif live command timed out: ${command}`));
       }, this.options.commandTimeoutMs ?? 10_000);
-      this.pending.set(id, { resolve, reject, timeout });
+      this.pending.set(id, { resolve, reject, timeout, socket });
       socket.send(JSON.stringify(request), (error) => {
         if (!error) return;
         clearTimeout(timeout);
@@ -94,12 +95,14 @@ export class LiveBridge {
   private handleConnection(socket: WebSocket): void {
     if (this.pluginSocket && this.pluginSocket.readyState === WebSocket.OPEN) {
       this.replacedConnections += 1;
+      this.rejectPendingForSocket(this.pluginSocket, new GraphifMcpError("GRAPHIF_RECONNECTED", "Graphif live plugin reconnected"));
       this.pluginSocket.close();
     }
     this.pluginSocket = socket;
     this.lastConnectedAt = new Date().toISOString();
     socket.on("message", (data) => this.handleMessage(data.toString()));
     socket.on("close", () => {
+      this.rejectPendingForSocket(socket, new GraphifMcpError("GRAPHIF_DISCONNECTED", "Graphif live plugin disconnected"));
       if (this.pluginSocket === socket) {
         this.pluginSocket = null;
       }
@@ -123,6 +126,15 @@ export class LiveBridge {
       return;
     }
     pending.reject(new GraphifMcpError("LIVE_COMMAND_FAILED", response.error.message, response.error));
+  }
+
+  private rejectPendingForSocket(socket: WebSocket, error: Error): void {
+    for (const [id, request] of this.pending.entries()) {
+      if (request.socket !== socket) continue;
+      clearTimeout(request.timeout);
+      this.pending.delete(id);
+      request.reject(error);
+    }
   }
 
   private getPort(): number {

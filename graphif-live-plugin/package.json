@@ -1,7 +1,7 @@
 {
   "name": "codex-graphif-live",
   "displayName": "Codex Graphif Live",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Live bridge extension that lets Codex control the active Graphif canvas.",
   "author": "swordordead",
   "icon": "icon.svg",
