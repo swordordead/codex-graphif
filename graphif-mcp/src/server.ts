@@ -182,9 +182,9 @@ export function createGraphifMcpServer(bridge = new LiveBridge({ port: 17321 }))
     "live_move_node",
     {
       title: "Move Live Graphif Node",
-      description: "Move a text node in the active Graphif canvas.",
+      description: "Move a text node in the active Graphif canvas by UUID.",
       inputSchema: {
-        nodeId: z.string(),
+        nodeId: z.string().describe("UUID of the text node returned by live_list_nodes."),
         x: z.number(),
         y: z.number(),
       },
@@ -196,9 +196,9 @@ export function createGraphifMcpServer(bridge = new LiveBridge({ port: 17321 }))
     "live_rename_node",
     {
       title: "Rename Live Graphif Node",
-      description: "Rename a text node in the active Graphif canvas.",
+      description: "Rename a text node in the active Graphif canvas by UUID.",
       inputSchema: {
-        nodeId: z.string(),
+        nodeId: z.string().describe("UUID of the text node returned by live_list_nodes."),
         text: z.string(),
       },
     },
@@ -209,10 +209,10 @@ export function createGraphifMcpServer(bridge = new LiveBridge({ port: 17321 }))
     "live_add_edge",
     {
       title: "Add Live Graphif Edge",
-      description: "Connect two text nodes in the active Graphif canvas.",
+      description: "Connect two text nodes in the active Graphif canvas by UUID.",
       inputSchema: {
-        sourceId: z.string(),
-        targetId: z.string(),
+        sourceId: z.string().describe("UUID of the source text node returned by live_list_nodes."),
+        targetId: z.string().describe("UUID of the target text node returned by live_list_nodes."),
         text: z.string().optional(),
       },
     },
